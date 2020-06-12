@@ -20,7 +20,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
     - name: build
-      run: mvn install
+      run: mvn clean install
     - name: artifact
       uses: actions/upload-artifact@v1
       with:
