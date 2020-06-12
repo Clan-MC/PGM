@@ -1,4 +1,4 @@
-PGM ![deploy](https://github.com/Electroid/PGM/workflows/deploy/badge.svg) [![Crowdin](https://badges.crowdin.net/pgm/localized.svg)](https://crowdin.com/project/pgm)
+PGM [![Crowdin](https://badges.crowdin.net/pgm/localized.svg)](https://crowdin.com/project/pgm)
 ===
 
 The original PvP Game Manager for Minecraft.
