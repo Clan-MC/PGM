@@ -420,7 +420,8 @@ public class ChatDispatcher implements Listener {
                             getPrefix(sender.getBukkit())
                                 + ChatColor.DARK_GRAY
                                 + " | "
-                                + sender.getBukkit().getDisplayName()),
+                                + sender.getBukkit().getDisplayName()
+                                + getSuffix(sender.getBukkit())),
                         message);
                 event.getRecipients().forEach(player -> player.sendMessage(finalMessage));
               });
