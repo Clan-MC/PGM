@@ -18,7 +18,15 @@ import net.kyori.text.TextComponent;
 import net.kyori.text.TranslatableComponent;
 import net.kyori.text.format.TextColor;
 import net.kyori.text.format.TextDecoration;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.cacheddata.CachedMetaData;
+import net.luckperms.api.context.ContextManager;
+import net.luckperms.api.context.ImmutableContextSet;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.query.QueryOptions;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -73,8 +81,10 @@ public class ChatDispatcher implements Listener {
   private static final String DM_SYMBOL = "@";
   private static final String ADMIN_CHAT_SYMBOL = "$";
 
-  private static final String GLOBAL_FORMAT = "<%s>: %s";
-  private static final String PREFIX_FORMAT = "%s: %s";
+  private static final String GLOBAL_FORMAT =
+      ("%s" + ChatColor.GRAY + " » " + ChatColor.RESET + "%s");
+  private static final String PREFIX_FORMAT =
+      ("%s" + ChatColor.GRAY + " » " + ChatColor.RESET + "%s");
   private static final String AC_FORMAT =
       TextTranslations.translateLegacy(ADMIN_CHAT_PREFIX, null) + PREFIX_FORMAT;
 
@@ -87,6 +97,36 @@ public class ChatDispatcher implements Listener {
     this.lastMessagedBy = new OnlinePlayerMapAdapter<>(PGM.get());
     this.muted = Sets.newHashSet();
     PGM.get().getServer().getPluginManager().registerEvents(this, PGM.get());
+  }
+
+  private static String getPrefix(Player player) {
+    final LuckPerms lpAPI = LuckPermsProvider.get();
+    User user = lpAPI.getUserManager().getUser(player.getUniqueId());
+    ContextManager contextManager = lpAPI.getContextManager();
+    ImmutableContextSet contextSet =
+        contextManager.getContext(user).orElseGet(contextManager::getStaticContext);
+    CachedMetaData metaData = user.getCachedData().getMetaData(QueryOptions.contextual(contextSet));
+    String prefix = metaData.getPrefix();
+    if (prefix == null) {
+      return "";
+    } else {
+      return prefix;
+    }
+  }
+
+  private static String getSuffix(Player player) {
+    final LuckPerms lpAPI = LuckPermsProvider.get();
+    User user = lpAPI.getUserManager().getUser(player.getUniqueId());
+    ContextManager contextManager = lpAPI.getContextManager();
+    ImmutableContextSet contextSet =
+        contextManager.getContext(user).orElseGet(contextManager::getStaticContext);
+    CachedMetaData metaData = user.getCachedData().getMetaData(QueryOptions.contextual(contextSet));
+    String suffix = metaData.getSuffix();
+    if (suffix == null) {
+      return "";
+    } else {
+      return suffix;
+    }
   }
 
   public void addMuted(MatchPlayer player) {
@@ -268,6 +308,8 @@ public class ChatDispatcher implements Listener {
 
   @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
   public void onChat(AsyncPlayerChatEvent event) {
+    Player p = event.getPlayer();
+
     if (CHAT_EVENT_CACHE.getIfPresent(event) == null) {
       event.setCancelled(true);
     } else {
@@ -371,7 +413,15 @@ public class ChatDispatcher implements Listener {
                 }
 
                 final String finalMessage =
-                    String.format(event.getFormat(), sender.getBukkit().getDisplayName(), message);
+                    String.format(
+                        event.getFormat(),
+                        ChatColor.translateAlternateColorCodes(
+                            '&',
+                            getPrefix(sender.getBukkit())
+                                + ChatColor.DARK_GRAY
+                                + " | "
+                                + sender.getBukkit().getDisplayName()),
+                        message);
                 event.getRecipients().forEach(player -> player.sendMessage(finalMessage));
               });
       return;
